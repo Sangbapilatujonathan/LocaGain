@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connexion Admin (Téléphone)</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f4;}
+    h2 { color: #2c3e50;}
+    input, button { margin: 6px 0; padding: 8px; width: 100%; box-sizing: border-box;}
+.section { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+    img { max-width: 150px; margin-top: 10px; display: block;}
+.logement { background: #fff; padding: 15px; margin-top: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
+    #logoutBtn { background: red; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;}
+  </style>
+</head>
+<body>
+
+<div class="section" id="login-section">
+  <h2>Connexion Admin</h2>
+  <input type="text" id="phone" placeholder="Numéro de téléphone (+243...)" />
+  <input type="password" id="password" placeholder="Mot de passe" />
+  <button id="loginBtn">Connexion</button>
+  <p id="login-error" style="color:red;"></p>
+</div>
+
+<div class="section" id="admin-section" style="display:none;">
+  <h2>Ajouter un logement</h2>
+  <form id="logement-form">
+    <input type="text" id="titre" placeholder="Titre" required />
+    <input type="text" id="pieces" placeholder="Nombre de pièces" required />
+    <input type="text" id="prix" placeholder="Prix" required />
+    <input type="file" id="photo" accept="image/*" required />
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h2>Logements existants</h2>
+  <div id="logement-list">Chargement...</div>
+
+  <button id="logoutBtn">Déconnexion</button>
+</div>
+
+<script type="module">
+  import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+  const pb = new PocketBase('http://127.0.0.1:8080');
+
+  const loginSection = document.getElementById('login-section');
+  const adminSection = document.getElementById('admin-section');
+  const loginError = document.getElementById('login-error');
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const phone = document.getElementById('phone').value.trim();
+    const pass = document.getElementById('password').value.trim();
+
+    try {
+      await pb.collection('users').authWithPassword(phone, pass);
+      loginSection.style.display = 'none';
+      adminSection.style.display = 'block';
+      loginError.textContent = '';
+      chargerLogements();
+} catch (e) {
+      loginError.textContent = "Erreur: " + e.message;
+}
+});
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    pb.authStore.clear();
+    location.reload();
+});
+
+  document.getElementById('logement-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData();
+    form.append('titre', document.getElementById('titre').value.trim());
+    form.append('pieces', document.getElementById('pieces').value.trim());
+    form.append('prix', document.getElementById('prix').value.trim());form.append('photo', document.getElementById('photo').files[0]);
+
+    try {
+      await pb.collection('logements').create(form);
+      alert("Logement ajouté!");
+      e.target.reset();
+      chargerLogements();
+} catch (err) {
+      alert("Erreur: " + err.message);
+}
+});
+
+  async function chargerLogements() {
+    const list = document.getElementById('logement-list');
+    list.innerHTML = "Chargement...";
+    try {
+      const logements = await pb.collection('logements').getFullList({ sort: '-created'});
+      list.innerHTML = '';
+      logements.forEach(l => {
+        const img = l.photo? pb.files.getUrl(l, l.photo): '';
+        const div = document.createElement('div');
+        div.className = 'logement';
+        div.innerHTML = `<strong>${l.titre}</strong><br>${l.pieces} pièces – ${l.prix} CDF`;
+        if (img) div.innerHTML += `<br><img src="${img}" alt="${l.titre}" />`;
+        list.appendChild(div);
+});
+} catch (err) {
+      list.textContent = "Erreur de chargement.";
+}
+}
+</script>
+
+</body>
+</html>

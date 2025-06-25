@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Stats - LocaGain</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+      padding: 20px;
+}
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+}
+.stats-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 30px;
+}
+.stat-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      min-width: 240px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+}
+.stat-box h2 {
+      margin: 0;
+      font-size: 2em;
+      color: #3498db;
+}
+.stat-box p {
+      margin: 8px 0 0;
+      font-size: 15px;
+      color: #555;
+}
+  </style>
+</head>
+<body>
+  <h1>Statistiques générales - Admin</h1>
+  <div class="stats-container">
+    <div class="stat-box">
+      <h2 id="total-users">0</h2>
+      <p>Utilisateurs inscrits</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="total-paiements">0</h2>
+      <p>Paiements validés (CDF)</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="invest-valide">0</h2>
+      <p>Investissements validés</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="invest-attente">0</h2>
+      <p>Investissements en attente</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    if (!pb.authStore.isValid) {
+      window.location.href = "login.html";
+}
+
+    // Utilisateurs
+    const users = await pb.collection('users').getFullList();
+    document.getElementById('total-users').textContent = users.length;
+
+    // Paiements validés
+    const paiements = await pb.collection('paiements').getFullList({
+      filter: 'valide=true'
+});
+    const totalMontant = paiements.reduce((sum, p) => sum + p.montant, 0);
+    document.getElementById('total-paiements').textContent = totalMontant.toLocaleString();
+
+    // Investissements
+    const investissements = await pb.collection('investissements').getFullList();
+    const validés = investissements.filter(i => i.statut?.toLowerCase() === 'validé').length;
+    const enAttente = investissements.filter(i => i.statut?.toLowerCase() === 'en attente').length;
+
+    document.getElementById('invest-valide').textContent = validés;
+    document.getElementById('invest-attente').textContent = enAttente;
+  </script>
+</body>
+</html>

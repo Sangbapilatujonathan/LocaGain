@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Paiements</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+}
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+}
+.paiement {
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+    button {
+      margin-top: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+}
+.valider {
+      background-color: #27ae60;
+      color: white;
+}
+.refuser {
+      background-color: #e74c3c;
+      color: white;
+      margin-left: 8px;
+}
+  </style>
+</head>
+<body>
+  <h1>Validation des paiements</h1>
+  <div id="liste-paiements">Chargement...</div>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    // Vérifier si un admin est connecté
+    if (!pb.authStore.isValid) {
+      window.location.href = 'login.html';
+}
+
+    const container = document.getElementById('liste-paiements');
+
+    async function chargerPaiements() {
+      container.textContent = "Chargement...";
+      try {
+        const paiements = await pb.collection('paiements').getFullList({
+          expand: 'utilisateur',
+          filter: 'valide=false',
+          sort: '-created'
+});
+
+        container.innerHTML = '';
+
+        if (paiements.length === 0) {
+          container.textContent = "Aucun paiement à valider.";
+          return;
+}
+
+        paiements.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'paiement';
+          const date = new Date(p.created).toLocaleString();
+          const userPhone = p.expand.utilisateur?.phone?? "(utilisateur inconnu)";
+
+          div.innerHTML = `
+            <p><strong>${p.montant} CDF</strong> – ${userPhone}</p>
+            <p>Envoyé le ${date}</p>
+          `;
+
+          const btnValider = document.createElement('button');
+          btnValider.textContent = 'Valider';
+          btnValider.className = 'valider';
+          btnValider.onclick = async () => {
+            await pb.collection('paiements').update(p.id, { valide: true});
+            chargerPaiements();
+};
+
+          const btnRefuser = document.createElement('button');
+          btnRefuser.textContent = 'Supprimer';
+          btnRefuser.className = 'refuser';
+          btnRefuser.onclick = async () => {
+            await pb.collection('paiements').delete(p.id);
+            chargerPaiements();
+};
+
+          div.appendChild(btnValider);
+          div.appendChild(btnRefuser);
+          container.appendChild(div);
+});
+} catch (e) {
+        console.error(e);
+        container.textContent = "Erreur lors du chargement.";
+}
+}
+
+    chargerPaiements();
+  </script>
+</body>
+</html>
