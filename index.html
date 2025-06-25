@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LocaGain - Tableau de bord</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      text-align: center;
+}
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+}
+    nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #2c3e50;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+}
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+}
+.container {
+      padding: 40px 20px 80px;
+}
+.btn {
+      padding: 10px 20px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-top: 20px;
+      cursor: pointer;
+}
+.btn:hover {
+      background-color: #219150;
+}
+.logement-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px;
+      background-color: white;
+}
+    footer {
+      padding: 20px;
+      background-color: #f5f5f5;
+}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>Bienvenue, <span id="user-phone">...</span></h2>
+    <p>Louez. Gagnez. Évoluez.</p>
+    <button id="logoutBtn" style="background:red; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Déconnexion</button>
+  </header>
+
+  <div class="container">
+    <h2>Votre tableau de bord</h2>
+    <p>Consultez vos investissements, revenus et plus.</p>
+    <button class="btn" onclick="window.location.href='investissements.html'">Voir les offres</button>
+  </div>
+
+  <div id="logements-list">Chargement des logements...</div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="investissements.html">Investissements</a>
+    <a href="parrainage.html">Parrainage</a>
+    <a href="statistiques.html">Statistiques</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <footer>
+    <section id="legal">
+      <h4>Infos légales & Support</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li><a href="terms.html">Conditions d'utilisation</a></li>
+        <li><a href="privacy.html">Politique de confidentialité</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="mailto:support@locagain.com">Contacter le support</a></li>
+      </ul>
+    </section>
+  </footer>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    if (!pb.authStore.isValid) {
+      window.location.href = "login.html";
+} else {
+      const user = pb.authStore.model;
+      const phoneEl = document.getElementById('user-phone');
+      if (phoneEl) phoneEl.textContent = user.phone;
+}
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', () => {
+      pb.authStore.clear();
+      window.location.href = "login.html";
+});
+
+    <script type="module">
+  import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+  const pb = new PocketBase('http://127.0.0.1:8080');
+
+  // Authentification
+  if (!pb.authStore.isValid) {
+    window.location.href = "login.html";
+} else {
+    const user = pb.authStore.model;
+    const phoneEl = document.getElementById('user-phone');
+    if (phoneEl) phoneEl.textContent = user.phone;
+}
+
+  // Déconnexion
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.addEventListener('click', () => {
+    pb.authStore.clear();
+    window.location.href = "login.html";
+});
+
+  // Chargement dynamique des logements
+  const listContainer = document.getElementById('logements-list');
+  listContainer.textContent = "Chargement des logements...";
+
+  try {
+    const logements = await pb.collection('logements').getFullList({
+      sort: '-created'
+});
+
+    listContainer.innerHTML = '';
+
+    if (!logements.length) {
+      listContainer.textContent = "Aucun logement disponible.";
+} else {
+      logements.forEach(logement => {
+        const card = document.createElement("div");
+        card.className = "logement-card";
+
+        card.innerHTML = `
+          <h3>${logement.titre}</h3>
+          <p>${logement.pieces} pièce(s) - ${logement.prix}</p>
+          <a href="logement.html?id=${logement.id}">
+            <button class="btn">Contacter</button>
+          </a>
+        `;
+
+        listContainer.appendChild(card);
+});
+}
+} catch (error) {
+    console.error("Erreur lors du chargement des logements:", error);
+    listContainer.textContent = "Erreur lors du chargement des logements.";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Statistiques - LocaGain</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f9f9f9;
+      padding-bottom: 80px;
+}
+    header {
+      background-color: #2980b9;
+      color: white;
+      padding: 20px;
+      text-align: center;
+}
+    #user-phone {
+      font-size: 0.9em;
+      opacity: 0.9;
+}
+.container {
+      padding: 20px;
+}
+.card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.card h3 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+}
+.card p {
+      font-size: 16px;
+      color: #34495e;
+}
+    nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #2c3e50;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+}
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+}
+    #logoutBtn {
+      margin-top: 10px;
+      padding: 8px 14px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Statistiques</h1>
+    <div>Connecté: <span id="user-phone">Chargement...</span></div>
+    <button id="logoutBtn">Déconnexion</button>
+  </header>
+
+  <div class="container" id="stats-container">
+    Chargement des statistiques...
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="investissements.html">Investissements</a>
+    <a href="parrainage.html">Parrainage</a>
+    <a href="statistiques.html">Statistiques</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    // Authentification
+    if (!pb.authStore.isValid) {
+      window.location.href = "login.html";
+} else {
+      const user = pb.authStore.model;
+      const phoneEl = document.getElementById('user-phone');
+      if (user.phone && phoneEl) phoneEl.textContent = user.phone;
+}
+
+    // Déconnexion
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', () => {
+      pb.authStore.clear();
+      window.location.href = "login.html";
+});
+
+    // Chargement des statistiques
+    const statsContainer = document.getElementById('stats-container');
+
+    try {
+      const stats = await pb.collection('statistiques').getFullList({ sort: '-created'});
+      statsContainer.innerHTML = '';
+
+      if (!stats.length) {
+        statsContainer.textContent = "Aucune statistique disponible.";
+} else {
+        stats.forEach(stat => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <h3>${stat.titre}</h3>
+            <p>${stat.valeur}</p>
+          `;
+          statsContainer.appendChild(card);
+});
+}
+} catch (err) {
+      console.error("Erreur PocketBase:", err);
+      statsContainer.textContent = "Erreur lors du chargement des statistiques.";
+}
+  </script>
+</body>
+</html>

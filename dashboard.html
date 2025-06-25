@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LocAgain - Tableau de bord</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+}
+    header {
+      background-color: #3498db;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+    main {
+      flex-grow: 1;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+}
+    nav {
+      background-color: #fff;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+}
+    nav a {
+      text-decoration: none;
+      color: #34495e;
+      font-weight: 600;
+      font-size: 0.9em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-grow: 1;
+      padding: 5px 0;
+      transition: color 0.3s ease;
+}
+    nav a:hover, nav a.active {
+      color: #3498db;
+}
+    nav a svg {
+      margin-bottom: 4px;
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+}
+    #logoutBtn {
+      margin: 20px auto;
+      display: block;
+      background: red;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+}
+  </style>
+</head>
+<body>
+
+<header>
+  LocAgain - Tableau de bord<br />
+  <span id="user-phone" style="font-size: 0.8em;">Chargement...</span>
+</header>
+
+<main>
+  <section id="home" style="display:block;">
+    <h2>Bienvenue sur votre tableau de bord</h2>
+    <p>Suivez vos investissements locatifs facilement.</p>
+  </section>
+  <section id="investissement" style="display:none;">
+    <h2>Investissements</h2>
+    <ul>
+      <li><strong>Normal</strong>: Chambre à louer</li>
+      <li><strong>Avancé</strong>: Appartement à louer</li>
+      <li><strong>Pro</strong>: Maison en étage à louer</li>
+    </ul>
+  </section>
+  <section id="parrainage" style="display:none;">
+    <h2>Parrainage</h2>
+    <p>Invitez vos amis et gagnez des bonus.</p>
+  </section>
+  <section id="profil" style="display:none;">
+    <h2>Profil</h2>
+    <p><strong>Moyens de dépôt:</strong></p>
+    <ul>
+      <li>M-Pesa: 0812277429 (Chico Balongwa)</li>
+      <li>Orange Money: 0851626075 (Gesika Eleana)</li>
+    </ul>
+  </section>
+  <section id="statistiques" style="display:none;">
+    <h2>Statistiques</h2>
+    <p>Vos performances d’investissement seront affichées ici.</p>
+  </section>
+
+  <button id="logoutBtn">Déconnexion</button>
+</main>
+
+<nav>
+  <a href="#" class="active" data-target="home" title="Accueil">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Accueil
+  </a>
+  <a href="#" data-target="investissement" title="Investissement">
+    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm4 0h2v-2H7v2z"/></svg>
+    Investissement
+  </a>
+  <a href="#" data-target="parrainage" title="Parrainage">
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5z"/></svg>
+    Parrainage
+  </a>
+  <a href="#" data-target="profil" title="Profil">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2z"/></svg>
+    Profil
+  </a><a href="#" data-target="statistiques" title="Statistiques">
+    <svg viewBox="0 0 24 24"><path d="M3 17h3v-7H3v7z"/></svg>
+    Statistiques
+  </a>
+</nav>
+
+<script type="module">
+  import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+
+  const pb = new PocketBase('http://127.0.0.1:8080');
+
+  // Vérifier si l'utilisateur est connecté
+  if (!pb.authStore.isValid) {
+    window.location.href = "login.html";
+} else {
+    const user = pb.authStore.model;
+    const phoneEl = document.getElementById('user-phone');
+    if (phoneEl && user.phone) phoneEl.textContent = `Connecté: ${user.phone}`;
+}
+
+  // Navigation
+  const navLinks = document.querySelectorAll('nav a');
+  const sections = document.querySelectorAll('main section');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = link.getAttribute('data-target');
+
+      sections.forEach(s => s.style.display = 'none');
+      document.getElementById(target).style.display = 'block';
+
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+});
+});
+
+  // Déconnexion
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.addEventListener('click', () => {
+    pb.authStore.clear();
+    window.location.href = "login.html";
+});
+</script>
+
+</body>
+</html>

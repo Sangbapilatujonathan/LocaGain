@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, content=initial-scale=1.0"/>
+  <title>Investissements - LocaGain</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding-bottom: 80px;
+    }
+    header {
+      background-color: #34495e;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .section {
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .box h3 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+    }
+    .box p {
+      margin: 0;
+    }
+    .invest-btn {
+      padding: 10px 15px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .invest-btn:hover {
+      background-color: #219150;
+    }
+    .investment-form {
+      display: none;
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #2c3e50;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Investissements</h1>
+  </header>
+  
+  <div class="section">
+    <!-- Normal Investment -->
+    <div class="box">
+      <h3>Normal - Chambre à louer</h3>
+      <p>Investissez dans une chambre à louer pour 30 jours. Revenu garanti à la fin du mois (500%).</p>
+      <a href="#" class="invest-btn" data-type="normal">Investir maintenant</a>
+      <div class="investment-form">
+        <label for="montant-normal">Montant à investir (en KES) :</label>
+        <input type="number" id="montant-normal" min="1" placeholder="Exemple: 1000" required>
+        <button class="confirm-invest" data-type="normal">Confirmer l'investissement</button>
+      </div>
+    </div>
+
+    <!-- Advanced Investment -->
+    <div class="box">
+      <h3>Avancé - Appartement à louer</h3>
+      <p>Investissement moyen terme. Louez un appartement pour générer des bénéfices plus élevés (500%).</p>
+      <a href="#" class="invest-btn" data-type="avance">Investir maintenant</a>
+      <div class="investment-form">
+        <label for="montant-avance">Montant à investir (en KES) :</label>
+        <input type="number" id="montant-avance" min="1" placeholder="Exemple: 1000" required>
+        <button class="confirm-invest" data-type="avance">Confirmer l'investissement</button>
+      </div>
+    </div>
+
+    <!-- Pro Investment -->
+    <div class="box">
+      <h3>Pro - Maison en étage à louer</h3>
+      <p>Investissez dans une maison de haut standing. Rendement premium garanti chaque mois (500%).</p>
+      <a href="#" class="invest-btn" data-type="pro">Investir maintenant</a>
+      <div class="investment-form">
+        <label for="montant-pro">Montant à investir (en KES) :</label>
+        <input type="number" id="montant-pro" min="1" placeholder="Exemple: 1000" required>
+        <button class="confirm-invest" data-type="pro">Confirmer l'investissement</button>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="investissements.html">Investissements</a>
+    <a href="parrainage.html">Parrainage</a>
+    <a href="statistiques.html">Statistiques</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <script>
+    // Gestion des événements pour afficher le formulaire d'investissement
+    const investButtons = document.querySelectorAll('.invest-btn');
+    investButtons.forEach(button => {
+      button.addEventListener('click', function(event) {
+        event.preventDefault(); // Empêche le lien de suivre son href
+        const investmentForm = this.nextElementSibling; // Accède à la forme d'investissement
+        investmentForm.style.display = investmentForm.style.display === 'block' ? 'none' : 'block'; // Alterne l'affichage
+      });
+    });
+
+    // Gestion des confirmations d'investissement
+    const confirmButtons = document.querySelectorAll('.confirm-invest');
+    confirmButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const type = this.getAttribute('data-type'); // Récupère le type d'investissement
+        const montantInput = document.getElementById(`montant-${type}`);
+        const montant = montantInput.value;
+        
+        if (montant > 0) {
+          alert(`Investissement de ${montant} KES confirmé pour ${type}. Merci !`);
+          montantInput.value = ''; // Réinitialise le champ de saisie
+          this.parentElement.style.display = 'none'; // Cache le formulaire après confirmation
+        } else {
+          alert("Veuillez entrer un montant valide.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

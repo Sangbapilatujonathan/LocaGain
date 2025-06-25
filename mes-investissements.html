@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mes Investissements - LocaGain</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding-bottom: 80px;
+}
+    header {
+      background-color: #3498db;
+      color: white;
+      text-align: center;
+      padding: 20px;
+}
+    #user-phone {
+      font-size: 0.9em;
+      opacity: 0.8;
+}
+.container {
+      padding: 20px;
+}
+.investment,.payment-record {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      margin-bottom: 15px;
+}
+.investment h3,.payment-record h4 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+}
+.investment p,.payment-record p {
+      margin: 5px 0;
+      color: #555;
+}
+    #paiement {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+    #paiement input {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+}
+    #paiement button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+}
+    #paiement button:hover {
+      background-color: #2980b9;
+}
+    nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #2c3e50;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+}
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mes Investissements</h1>
+    <div>Connecté: <span id="user-phone">Chargement...</span></div>
+    <button id="logoutBtn">Déconnexion</button>
+  </header>
+
+  <div class="container">
+    <div class="investment">
+      <h3>Chambre à louer - Normal</h3>
+      <p>Montant: 50000 CDF</p>
+      <p>Durée: 30 jours</p>
+      <p>Statut: En attente</p>
+    </div>
+
+    <div class="investment">
+      <h3>Appartement - Avancé</h3>
+      <p>Montant: 100000 CDF</p>
+      <p>Durée: 30 jours</p>
+      <p>Statut: En attente</p>
+    </div>
+
+    <div class="investment">
+      <h3>Maison en étage - Pro</h3>
+      <p>Montant: 200000 CDF</p>
+      <p>Durée: 30 jours</p>
+      <p>Statut: En attente</p>
+    </div>
+
+    <div id="paiement">
+      <h2>Confirmer un paiement</h2>
+      <input type="number" id="montant" placeholder="Montant en CDF" />
+      <button id="confirmerPaiement">Confirmer</button>
+    </div>
+
+    <h3 style="margin-top:40px;">Historique de paiements</h3>
+    <div id="historique-paiement">Chargement...</div>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="investissements.html">Investissements</a>
+    <a href="parrainage.html">Parrainage</a>
+    <a href="statistiques.html">Statistiques</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    // Vérification de connexion
+    if (!pb.authStore.isValid) {window.location.href = "login.html";
+} else {
+      const user = pb.authStore.model;
+      document.getElementById('user-phone').textContent = user.phone?? "Inconnu";
+}
+
+    // Déconnexion
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      pb.authStore.clear();
+      window.location.href = "login.html";
+});
+
+    // Envoi de paiement
+    document.getElementById('confirmerPaiement').addEventListener('click', async () => {
+      const montant = Number(document.getElementById('montant').value);
+
+      if (!montant || montant <= 0) {
+        alert('Veuillez entrer un montant valide.');
+        return;
+}
+
+      try {
+        await pb.collection('paiements').create({
+          montant,
+          utilisateur: pb.authStore.model.id,
+});
+
+        alert(`Merci! Votre paiement de ${montant} CDF a bien été enregistré.`);
+        document.getElementById('montant').value = '';
+        chargerHistoriquePaiement();
+} catch (err) {
+        console.error("Erreur lors de l’enregistrement du paiement:", err);
+        alert("Une erreur est survenue. Veuillez réessayer.");
+}
+});
+
+    // Historique des paiements
+    async function chargerHistoriquePaiement() {
+      const container = document.getElementById('historique-paiement');
+      container.innerHTML = "Chargement...";
+
+      try {
+        const paiements = await pb.collection('paiements').getFullList({
+          filter: `utilisateur="${pb.authStore.model.id}"`,
+          sort: '-created'
+});
+
+        container.innerHTML = '';
+
+        if (!paiements.length) {
+          container.textContent = "Aucun paiement enregistré.";
+} else {
+          paiements.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'payment-record';
+            const date = new Date(p.created).toLocaleDateString();
+            card.innerHTML = `<h4>${p.montant} CDF</h4><p>Enregistré le ${date}</p>`;
+            container.appendChild(card);
+});
+}
+} catch (e) {
+        console.error("Erreur de récupération des paiements:", e);
+        container.textContent = "Impossible de charger les paiements.";
+}
+}
+
+    // Charger automatiquement à l’ouverture
+    chargerHistoriquePaiement();
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LocaGain - Inscription</title>
+</head>
+<body>
+  <h1>Inscription LocaGain</h1>
+  <input type="tel" id="phoneNumber" placeholder="Votre numéro (+243...)" />
+  <button id="registerBtn">S’inscrire</button>
+
+  <div style="margin-top:20px; font-size:16px;">
+    Pour toute aide, contactez notre service client : 
+    <a href="tel:+243851626075" style="color:blue; text-decoration:none;">+243851626075</a>
+  </div>
+
+  <div style="margin-top:10px; font-size:16px;">
+    Rejoins notre chaîne Telegram pour ne rien manquer : 
+    <a href="https://t.me/locagainvest" target="_blank" style="color:#0088cc; text-decoration:none;">
+      @ton_chaine
+    </a>
+  </div>
+
+  <!-- Charger PocketBase -->
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');document.getElementById('registerBtn').addEventListener('click', async () => {
+      const phone = document.getElementById('phoneNumber').value.trim();
+
+      try {
+        await pb.collection('Loca_users').create({
+          phone: phone,
+          password: '123456',
+          passwordConfirm: '123456'
+        });
+
+        alert("Inscription réussie !");
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        alert("Erreur : " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

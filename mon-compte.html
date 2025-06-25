@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon compte - LocaGain</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding-bottom: 80px;
+      background-color: #f4f4f4;
+}
+    header {
+      background-color: #3498db;
+      color: white;
+      padding: 20px;
+      text-align: center;
+}
+.container {
+      padding: 20px;
+}
+    h2 {
+      color: #2c3e50;
+      margin-top: 30px;
+}
+.card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card p {
+      margin: 4px 0;
+      color: #555;
+}
+    #logoutBtn {
+      background: red;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+}
+    nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #2c3e50;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+}
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mon compte</h1>
+    <div>Connecté: <span id="user-phone">...</span></div>
+    <button id="logoutBtn">Déconnexion</button>
+  </header>
+
+  <div class="container">
+    <h2>Mes investissements</h2>
+    <div id="investissements">Chargement...</div>
+
+    <h2>Mes paiements</h2>
+    <div id="paiements">Chargement...</div>
+
+    <h2>Résumé</h2>
+    <div id="resume">Calcul en cours...</div>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="investissements.html">Investissements</a>
+    <a href="statistiques.html">Statistiques</a>
+    <a href="profil.html">Profil</a>
+  </nav>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    const phoneSpan = document.getElementById('user-phone');
+    const user = pb.authStore.model;
+    if (!pb.authStore.isValid) {
+      window.location.href = "login.html";
+} else {
+      phoneSpan.textContent = user.phone?? "inconnu";
+}
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      pb.authStore.clear();
+      window.location.href = "login.html";
+});
+
+    const containerInvest = document.getElementById('investissements');
+    const containerPaiements = document.getElementById('paiements');
+    const resume = document.getElementById('resume');
+
+    let totalInvesti = 0;
+    let totalPaiementEnAttente = 0;
+    let totalPaiementValidé = 0;
+
+    // Investissements
+    try {
+      const investissements = await pb.collection('investissements').getFullList({
+        filter: `utilisateur="${user.id}"`,
+        sort: '-created'
+});
+
+      containerInvest.innerHTML = '';
+      if (!investissements.length) {
+        containerInvest.textContent = "Aucun investissement trouvé.";
+} else {
+        investissements.forEach(i => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <p><strong>${i.type}</strong></p>
+            <p>Montant: ${i.montant} CDF</p>
+            <p>Statut: ${i.statut}</p>
+          `;
+          totalInvesti += i.montant;
+          containerInvest.appendChild(card);
+});
+}
+} catch (e) {
+      console.error("Erreur investissements:", e);
+      containerInvest.textContent = "Erreur lors du chargement.";
+}
+
+    // Paiements
+    try {
+      const paiements = await pb.collection('paiements').getFullList({filter: `utilisateur="${user.id}"`,
+        sort: '-created'
+});
+
+      containerPaiements.innerHTML = '';
+      if (!paiements.length) {
+        containerPaiements.textContent = "Aucun paiement enregistré.";
+} else {
+        paiements.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const date = new Date(p.created).toLocaleString();
+          if (p.valide) {
+            totalPaiementValidé += p.montant;
+} else {
+            totalPaiementEnAttente += p.montant;
+}
+          card.innerHTML = `
+            <p><strong>${p.montant} CDF</strong></p>
+            <p>Status: ${p.valide? 'Validé': 'En attente'}</p>
+            <p>Date: ${date}</p>
+          `;
+          containerPaiements.appendChild(card);
+});
+}
+
+      // Résumé
+      resume.innerHTML = `
+        <p>Total investi: <strong>${totalInvesti} CDF</strong></p>
+        <p>Paiements validés: ${totalPaiementValidé} CDF</p>
+        <p>En attente de validation: ${totalPaiementEnAttente} CDF</p>
+      `;
+} catch (err) {
+      console.error("Erreur paiements:", err);
+      containerPaiements.textContent = "Erreur lors du chargement des paiements.";
+      resume.textContent = "Impossible de calculer le résumé.";
+}
+  </script>
+</body>
+</html>

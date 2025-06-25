@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Détails du logement</title>
+</head>
+<body>
+  <h2>Détails du logement</h2>
+  <div id="logement-info">Chargement...</div>
+
+  <div style="margin: 20px 0;">
+    <h3>Contacter le propriétaire</h3>
+    <textarea id="user-message" rows="4" placeholder="Ton message à propos de cette maison..." style="width:100%; padding:10px;"></textarea>
+    <button id="send-message" style="margin-top:10px; padding:10px;">Envoyer</button>
+  </div>
+
+  <script type="module">
+    import PocketBase from 'https://cdn.jsdelivr.net/npm/pocketbase@0.14.1/dist/pocketbase.esm.min.js';
+    const pb = new PocketBase('http://127.0.0.1:8080');
+
+    const logementId = new URLSearchParams(window.location.search).get("id");
+    const logementInfo = document.getElementById("logement-info");
+
+    if (!pb.authStore.isValid) {
+      window.location.href = "login.html";
+}
+
+    const user = pb.authStore.model;
+
+    // Charger les détails du logement
+    if (!logementId) {
+      logementInfo.innerText = "Logement non défini.";
+} else {
+      try {
+        const logement = await pb.collection('logements').getOne(logementId);
+        logementInfo.innerHTML = `
+          <p><strong>${logement.titre}</strong></p>
+          <p>${logement.pieces} pièce(s) - ${logement.prix}</p>
+          <p>${logement.description?? ''}</p>
+        `;
+} catch (e) {
+        logementInfo.innerText = "Erreur lors du chargement du logement.";
+}
+}
+
+    // Envoi de message
+    const sendBtn = document.getElementById('send-message');
+    const messageInput = document.getElementById('user-message');
+
+    sendBtn.addEventListener('click', async () => {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      try {
+        await pb.collection('messages').create({
+          logement: logementId,
+          auteur: user.id,
+          texte: message
+});
+        messageInput.value = '';
+        alert("Message envoyé!");
+} catch (e) {
+        console.error("Erreur envoi:", e);
+        alert("Échec de l'envoi du message.");
+}
+});
+  </script>
+</body>
+</html>
